@@ -45,5 +45,6 @@ fn read_csv_data(file_path: &str) -> (Vec<f64>, usize) {
             data.push(field.parse().unwrap());
         }
     }
+    data.shrink_to_fit();
     (data, shape)
 }
