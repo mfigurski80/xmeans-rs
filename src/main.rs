@@ -23,10 +23,39 @@ fn main() {
     println!("Data shape: {} by {}", shape, data_len);
 
     // kmeans
-    let kmean = KMeans::new(data, data_len, shape);
-    let result = kmean.kmeans_lloyd(3, 100, KMeans::init_kmeanplusplus, &KMeansConfig::default());
-    println!("Centroids: {:?}", result.centroids);
-    println!("Error: {}", result.distsum);
+    let k = 5;
+    let kmean = KMeans::new(data.clone(), data_len, shape);
+    let result = kmean.kmeans_lloyd(k, 100, KMeans::init_kmeanplusplus, &KMeansConfig::default());
+
+    let wrapped_centroids: Vec<&[f64]> = result.centroids.chunks(shape).collect();
+    println!("wrapped centroids: {:?}", wrapped_centroids);
+    let wrapped_data: Vec<&[f64]> = data.chunks(shape).collect();
+    println!("wrapped data: {:?}", wrapped_data);
+    println!("Assignments: {:?}", result.assignments);
+    let sse = compute_bic(&wrapped_data, &wrapped_centroids, result.assignments);
+    println!("err {}", result.distsum);
+    println!("Computed BIC: {:?}", sse);
+}
+
+fn compute_sse(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
+    let mut sse = 0.0;
+    for (point, assignment) in data.into_iter().zip(assignments.into_iter()) {
+        let assigned = centroids[assignment];
+        let mut err = 0.0;
+        for i in 0..assigned.len() {
+            err += f64::abs(point[i] - assigned[i]);
+        }
+        println!("sse for point {:?}: {}", point, err);
+        sse += err
+    }
+    sse
+}
+
+fn compute_bic(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
+    let sse = compute_sse(&data, centroids, assignments);
+    let data_len = data.len() as f64;
+    let k = centroids.len() as f64;
+    f64::ln(sse / data_len) + 2.0 * k * f64::ln(data_len) / data_len
 }
 
 fn read_csv_data(file_path: &str) -> (Vec<f64>, usize) {
