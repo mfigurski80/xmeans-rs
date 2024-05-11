@@ -18,23 +18,32 @@ fn main() {
     println!("Data file size: {} b", file_size);
 
     // read the data file into flat numeric vector
-    let file_content = std::fs::read_to_string(&data_file_path).unwrap();
-    let mut reader = ReaderBuilder::new().from_reader(file_content.as_bytes());
-    let shape = reader.records().next().unwrap().unwrap().len();
-    println!("Data shape: {}", shape);
+    let (data, shape) = read_csv_data(&data_file_path);
+    let data_len = data.len() / shape;
+    println!("Data shape: {} by {}", shape, data_len);
+
+    // kmeans
+    let kmean = KMeans::new(data, data_len, shape);
+    let result = kmean.kmeans_lloyd(3, 100, KMeans::init_kmeanplusplus, &KMeansConfig::default());
+    println!("Centroids: {:?}", result.centroids);
+    println!("Error: {}", result.distsum);
+}
+
+fn read_csv_data(file_path: &str) -> (Vec<f64>, usize) {
+    let file_content = std::fs::read_to_string(file_path).unwrap();
+    let mut reader = ReaderBuilder::new()
+        .has_headers(false)
+        .from_reader(file_content.as_bytes());
+    let mut shape = 0;
     let mut data = Vec::<f64>::new();
     for record in reader.records() {
         let record = record.unwrap();
+        if shape == 0 {
+            shape = record.len();
+        }
         for field in record.iter() {
             data.push(field.parse().unwrap());
         }
     }
-    let data_len = data.len() / shape;
-    println!("Data length: {}", data.len() / shape);
-
-    // kmeans
-    let kmean = KMeans::new(data, data_len, shape);
-    let result = kmean.kmeans_lloyd(4, 100, KMeans::init_kmeanplusplus, &KMeansConfig::default());
-    println!("Centroids: {:?}", result.centroids);
-    println!("Error: {}", result.distsum);
+    (data, shape)
 }
