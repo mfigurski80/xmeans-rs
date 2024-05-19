@@ -35,6 +35,22 @@ fn main() {
     println!("Computed BIC: {:?}", sse);
 }
 
+fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
+    let mut dist = 0.0;
+    for i in 0..x.len() {
+        dist += (x[i] - y[i]).powi(2);
+    }
+    f64::sqrt(dist)
+}
+
+fn compute_ll(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
+    for (x_i, assignment) in data.into_iter().zip(assignments.into_iter()) {
+        let mu_i = centroids[assignment];
+        let resid = compute_distance(x_i, mu_i);
+    }
+    0.0
+}
+
 fn compute_sse(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
     let mut sse = 0.0;
     for (point, assignment) in data.into_iter().zip(assignments.into_iter()) {
