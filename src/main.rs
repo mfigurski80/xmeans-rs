@@ -1,4 +1,5 @@
 use csv::ReaderBuilder;
+use itertools::Itertools;
 use kmeans::*;
 
 fn main() {
@@ -23,16 +24,15 @@ fn main() {
     println!("Data shape: {} by {}", shape, data_len);
 
     // kmeans
-    let k = 1;
+    let k = 5;
     let kmean = KMeans::new(data.clone(), data_len, shape);
     let result = kmean.kmeans_lloyd(k, 100, KMeans::init_kmeanplusplus, &KMeansConfig::default());
 
     let wrapped_centroids: Vec<&[f64]> = result.centroids.chunks(shape).collect();
     println!("wrapped centroids: {:?}", wrapped_centroids);
     let wrapped_data: Vec<&[f64]> = data.chunks(shape).collect();
-    let sse = compute_bic(&wrapped_data, &wrapped_centroids, result.assignments);
-    println!("err {}", result.distsum);
-    println!("Computed BIC: {:?}", sse);
+    let ll = compute_ll(&wrapped_data, &wrapped_centroids, result.assignments);
+    println!("Computed Log Likelihood: {:?}", ll);
 }
 
 fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
@@ -43,33 +43,33 @@ fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
     f64::sqrt(dist)
 }
 
+fn compute_group_pp(errors: Vec<f64>) -> Vec<f64> {
+    let variance = errors.iter().fold(0.0, |acc, x| acc + x.powi(2)) / errors.len() as f64;
+    let scale_factor = 1.0 / (f64::sqrt(2.0 * std::f64::consts::PI * variance));
+    let ll = errors
+        .iter()
+        .map(|e| -e.powi(2) / (2.0 * variance))
+        .map(|shift| scale_factor * shift.exp());
+    ll.collect()
+}
+
 fn compute_ll(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
-    for (x_i, assignment) in data.into_iter().zip(assignments.into_iter()) {
-        let mu_i = centroids[assignment];
-        let resid = compute_distance(x_i, mu_i);
+    let assigned = assignments
+        .into_iter()
+        .zip(data.into_iter())
+        .into_group_map();
+    let mut ln_pp = 1.0;
+    for (k, v) in assigned.iter() {
+        let mu = centroids[*k];
+        let errors = v.into_iter().map(|x| compute_distance(x, mu));
+        let ll = compute_group_pp(errors.collect())
+            .into_iter()
+            .map(|x| x.ln())
+            .sum::<f64>();
+        ln_pp *= ll;
     }
+    println!("error: {:?}", ln_pp);
     0.0
-}
-
-fn compute_sse(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
-    let mut sse = 0.0;
-    for (point, assignment) in data.into_iter().zip(assignments.into_iter()) {
-        let assigned = centroids[assignment];
-        let mut err = 0.0;
-        for i in 0..assigned.len() {
-            err += f64::abs(point[i] - assigned[i]);
-        }
-        sse += err * err;
-    }
-    sse
-}
-
-fn compute_bic(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
-    let sse = compute_sse(&data, centroids, assignments);
-    let data_len = data.len() as f64;
-    let k = centroids.len() as f64;
-    let parm = 2.0 * (k + 1.0);
-    f64::ln(sse / data_len) + parm * f64::ln(data_len) / data_len
 }
 
 fn read_csv_data(file_path: &str, delim: u8) -> (Vec<f64>, usize) {
