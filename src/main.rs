@@ -40,7 +40,7 @@ fn run_kmeans(data: &Vec<f64>, shape: usize, k: usize) {
     for (_, centroid) in wrapped_centroids.iter().enumerate() {
         let fmtted_centroid: Vec<String> = centroid.iter().map(|x| format!("{:.0}", x)).collect();
         // print with comma separated values
-        println!("{}", fmtted_centroid.join(", "));
+        println!("{}", fmtted_centroid.join(","));
     }
 }
 
