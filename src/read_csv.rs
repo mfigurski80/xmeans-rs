@@ -8,7 +8,7 @@ pub fn read_csv_data(file_path: &str, delim: u8) -> (Vec<f64>, usize) {
         .from_reader(file_content.as_bytes());
     let mut shape = 0;
     let mut data = Vec::<f64>::new();
-    for record in reader.records() {
+    for record in reader.records().take(1000) {
         let record = record.unwrap();
         if shape == 0 {
             shape = record.len();

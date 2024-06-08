@@ -9,16 +9,18 @@ fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
 }
 
 /** Follow reduced ll equation from Pelleg and Moore (2000) */
-fn compute_group_ll(errors: Vec<f64>, full_len: usize, k: usize) -> f64 {
+fn compute_group_ll(errors: Vec<f64>, k: usize) -> f64 {
     let len = errors.len() as f64;
-    let variance = errors.iter().fold(0.0, |acc, x| acc + x.powi(2)) / (len - k as f64);
-    let distribution = Normal::new(0.0, variance).unwrap();
+    let std_dev = errors.iter().fold(0.0, |acc, x| acc + x) / (len - k as f64);
+    let distribution = Normal::new(0.0, std_dev).unwrap();
+    println!("Distribution: {:?}", distribution);
     let ll = errors
         .iter()
         .map(|x| distribution.ln_pdf(*x))
-        .fold(0.0, |acc, x| acc + x)
-        + len * f64::ln(len / full_len as f64);
-    f64::ln(-ll)
+        .fold(0.0, |acc, x| acc + x);
+    println!("LL: {:?}", ll);
+    // folded distribution: double ll
+    ll * 2.0
 }
 
 pub fn compute_bic(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
@@ -28,10 +30,11 @@ pub fn compute_bic(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec
         .zip(data.into_iter())
         .map(|(mu, x)| compute_distance(mu, x))
         .collect::<Vec<f64>>();
-    let len = data.len();
+    let len = data.len() as f64;
+    let dim = data[0].len();
     let k = centroids.len();
-    let ll = compute_group_ll(errors, len, k);
-    let p_j = (k * data[0].len() + k) as f64;
-    let bic = ll - p_j * f64::ln(len as f64) / 2.0;
+    let free_params = (k - 1) + (dim * k) + 1;
+    let ll = compute_group_ll(errors, free_params);
+    let bic = free_params as f64 * f64::ln(len) - 2.0 * ll;
     bic
 }

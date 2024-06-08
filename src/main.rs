@@ -53,8 +53,7 @@ fn run_kmeans(data: &Vec<f64>, shape: usize, k: usize) {
 fn run_xmeans(data: &Vec<f64>, shape: usize) {
     let data_len = data.len() / shape;
     println!("Data shape: {} by {}", shape, data_len);
-    // kmeans
-    let k = 20;
+    let k = 3;
     let kmean = KMeans::new(data.clone(), data_len, shape);
     let result = kmean.kmeans_lloyd(k, 100, KMeans::init_kmeanplusplus, &KMeansConfig::default());
 
@@ -63,7 +62,6 @@ fn run_xmeans(data: &Vec<f64>, shape: usize) {
     let wrapped_data: Vec<&[f64]> = data.chunks(shape).collect();
     let bic = bic::compute_bic(&wrapped_data, &wrapped_centroids, result.assignments);
     println!("Computed BIC: {:?}", bic);
-    // not implemented
     unimplemented!();
 }
 
