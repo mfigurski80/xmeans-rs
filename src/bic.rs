@@ -38,3 +38,10 @@ pub fn compute_bic(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec
     let bic = free_params as f64 * f64::ln(len) - 2.0 * ll;
     bic
 }
+//
+// pub fn compute_uwnrapped_bic(data: &[f64], centroids: &[f64], assignments: Vec<usize>) -> f64 {
+// let dim = centroids.len() / assignments.len();
+// let errors = assignments
+// .into_iter()
+// .map(|assigned| centroids[assigned * dim..(assigned + 1) * dim])
+// }
