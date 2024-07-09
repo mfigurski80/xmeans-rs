@@ -13,12 +13,12 @@ fn compute_group_ll(errors: Vec<f64>, k: usize) -> f64 {
     let len = errors.len() as f64;
     let std_dev = errors.iter().fold(0.0, |acc, x| acc + x) / (len - k as f64);
     let distribution = Normal::new(0.0, std_dev).unwrap();
-    println!("Distribution: {:?}", distribution);
+    // println!("Distribution: {:?}", distribution);
     let ll = errors
         .iter()
         .map(|x| distribution.ln_pdf(*x))
         .fold(0.0, |acc, x| acc + x);
-    println!("LL: {:?}", ll);
+    // println!("LL: {:?}", ll);
     // folded distribution: double ll
     ll * 2.0
 }

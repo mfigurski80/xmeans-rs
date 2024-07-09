@@ -1,49 +1,23 @@
 use kmeans::*;
+mod args;
 mod bic;
 mod read_csv;
 
 fn main() {
-    let mut args = std::env::args();
-    if args.len() < 2 {
-        println!("Usage: xmeans <data_file_path> [-k <number>] [-mink <number] [--delim <string>]");
+    let found = args::parse_args(std::env::args());
+    if found.is_err() {
+        eprintln!("{}", found.err().unwrap());
         std::process::exit(1);
     }
-    let data_file_path = args.nth(1).unwrap();
-    if !data_file_path.ends_with(".csv") {
-        println!("Error: file ({}) is not a csv file", data_file_path);
-        std::process::exit(1);
-    }
-
-    let mut k = 0;
-    let mut min_k = 1;
-    let mut delim = b',';
-    while let Some(arg) = args.next() {
-        match arg.as_str() {
-            // check for -k <number> flag
-            "-k" | "--k" => {
-                k = args.next().unwrap().parse().unwrap();
-            }
-            "--mink" | "-mink" | "--mk" | "-mk" => {
-                min_k = args.next().unwrap().parse().unwrap();
-            }
-            // check for --delim <string> flag
-            "--delim" => {
-                delim = args.next().unwrap().as_bytes()[0];
-            }
-            _ => {
-                println!("Error: unknown flag {}", arg);
-                std::process::exit(1);
-            }
-        }
-    }
+    let args = found.unwrap();
 
     // read the data file into flat numeric vector
-    let (data, shape) = read_csv::read_csv_data(&data_file_path, delim);
-    if k > 0 {
+    let (data, shape) = read_csv::read_csv_data(args.file_path.as_str(), args.delim);
+    if args.k > 0 {
         // if user specified specific k, run kmeans
-        run_kmeans(&data, shape, k);
+        run_kmeans(&data, shape, args.k);
     } else {
-        run_xmeans(&data, shape, min_k);
+        run_xmeans(&data, shape, args.min_k);
     };
 }
 
@@ -57,7 +31,6 @@ fn run_kmeans(data: &Vec<f64>, shape: usize, k: usize) {
 
 fn run_xmeans(data: &Vec<f64>, shape: usize, start_k: usize) {
     let data_len = data.len() / shape;
-    println!("Data shape: {} by {}", shape, data_len);
     let kmean = KMeans::new(data.clone(), data_len, shape);
     let kmean_result = kmean.kmeans_lloyd(
         start_k,
@@ -76,8 +49,11 @@ fn run_xmeans(data: &Vec<f64>, shape: usize, start_k: usize) {
     );
     println!("Initial BIC: {:?}", bic);
 
-    let next = next_centroids(&wrapped_data, kmean_result);
-    println!("Next Centroids: {:?}", next);
+    loop {
+        let next_centroids = next_centroids(&wrapped_data, kmean_result);
+        println!("Next Centroids: {:?}", next_centroids);
+        break;
+    }
 
     unimplemented!();
 }
@@ -126,13 +102,16 @@ fn next_centroids<'a>(wrapped_data: &Vec<&'a [f64]>, state: kmeans::KMeansState<
             &kmeans_result.centroids.chunks(shape).collect(),
             kmeans_result.assignments,
         );
-        if old_bic > new_bic {
+        println!(
+            "Comparing centroids: {:?}({}) to {:?}({})?",
+            centroid, old_bic, kmeans_result.centroids, new_bic
+        );
+        if old_bic < new_bic {
             next_centroids.extend(centroid.iter());
-            println!("Old Centroid wins: {:?}", centroid);
         } else {
             next_centroids.extend(kmeans_result.centroids.iter());
-            println!("New Centroid wins: {:?}", kmeans_result.centroids);
         }
     }
+
     next_centroids
 }
