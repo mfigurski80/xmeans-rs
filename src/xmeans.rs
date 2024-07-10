@@ -46,8 +46,8 @@ pub fn next_centroids<'a>(
         );
         if old_bic < new_bic {
             next_centroids.extend(centroid.iter());
-            next_centroids.extend(kmeans_result.centroids.iter());
         } else {
+            next_centroids.extend(kmeans_result.centroids.iter());
         }
     }
 

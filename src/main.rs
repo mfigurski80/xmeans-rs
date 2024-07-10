@@ -7,11 +7,11 @@ use kmeans::*;
 
 fn main() {
     let args = match args::parse_args(std::env::args()) {
+        Ok(found) => found,
         Err(e) => {
-            eprintln!("{}", e);
+            eprint!("{}\n", e);
             std::process::exit(1);
         }
-        Ok(args) => args,
     };
 
     // read the data file into flat numeric vector
