@@ -1,3 +1,4 @@
+use kmeans::KMeansState;
 use statrs::distribution::{Continuous, Normal};
 
 fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
@@ -23,10 +24,14 @@ fn compute_group_ll(errors: Vec<f64>, k: usize) -> f64 {
     ll * 2.0
 }
 
-pub fn compute_bic(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
+// pub fn compute_bic(data: &[&[f64]], centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
+pub fn compute_bic(data: &[&[f64]], model: &KMeansState<f64>) -> f64 {
+    let shape = data[0].len();
+    let centroids: Vec<&[f64]> = model.centroids.chunks(shape).collect();
+    let assignments = &model.assignments;
     let errors = assignments
         .into_iter()
-        .map(|assigned| centroids[assigned])
+        .map(|assigned| centroids[*assigned])
         .zip(data.into_iter())
         .map(|(mu, x)| compute_distance(mu, x))
         .collect::<Vec<f64>>();
@@ -38,10 +43,3 @@ pub fn compute_bic(data: &Vec<&[f64]>, centroids: &Vec<&[f64]>, assignments: Vec
     let bic = free_params as f64 * f64::ln(len) - 2.0 * ll;
     bic
 }
-//
-// pub fn compute_uwnrapped_bic(data: &[f64], centroids: &[f64], assignments: Vec<usize>) -> f64 {
-// let dim = centroids.len() / assignments.len();
-// let errors = assignments
-// .into_iter()
-// .map(|assigned| centroids[assigned * dim..(assigned + 1) * dim])
-// }

@@ -9,7 +9,7 @@ fn main() {
     let args = match args::parse_args(std::env::args()) {
         Ok(found) => found,
         Err(e) => {
-            eprint!("{}\n", e);
+            eprintln!("{}", e);
             std::process::exit(1);
         }
     };
@@ -45,15 +45,11 @@ fn run_xmeans(data: &Vec<f64>, shape: usize, start_k: usize) {
     let wrapped_centroids: Vec<&[f64]> = kmean_result.centroids.chunks(shape).collect();
     let wrapped_data: Vec<&[f64]> = data.chunks(shape).collect();
 
-    let bic = bic::compute_bic(
-        &wrapped_data,
-        &wrapped_centroids,
-        kmean_result.assignments.clone(),
-    );
+    let bic = bic::compute_bic(&wrapped_data, &kmean_result);
     println!("Initial BIC: {:?}", bic);
 
     loop {
-        let next_centroids = xmeans::next_centroids(&wrapped_data, kmean_result);
+        let next_centroids = xmeans::next_centroids(&wrapped_data, &kmean_result);
         println!("Next Centroids: {:?}", next_centroids);
         break;
     }
@@ -61,7 +57,7 @@ fn run_xmeans(data: &Vec<f64>, shape: usize, start_k: usize) {
     unimplemented!();
 }
 
-fn print_centroids(c: &Vec<&[f64]>) {
+fn print_centroids(c: &[&[f64]]) {
     for centroid in c.iter() {
         let fmtted_centroid: Vec<String> = centroid.iter().map(|x| format!("{:.0}", x)).collect();
         // print with comma separated values

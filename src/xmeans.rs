@@ -5,7 +5,7 @@ use kmeans::*;
 /// them! Just train them and check the bic again to make sure
 pub fn next_centroids<'a>(
     wrapped_data: &Vec<&'a [f64]>,
-    state: kmeans::KMeansState<f64>,
+    state: &kmeans::KMeansState<f64>,
 ) -> Vec<f64> {
     let mut next_centroids: Vec<f64> = vec![];
 
@@ -21,7 +21,7 @@ pub fn next_centroids<'a>(
             .map(|x| *x)
             .collect::<Vec<f64>>();
         let cluster_data_len = cluster_data.len() / shape;
-        // attempt to split the cluster
+        // split the cluster and optimize new centroids
         let kmean = KMeans::new(cluster_data.clone(), cluster_data_len, shape);
         let kmeans_result = kmean.kmeans_lloyd(
             2,
@@ -30,16 +30,8 @@ pub fn next_centroids<'a>(
             &KMeansConfig::default(),
         );
         let wrapped_cluster_data: Vec<&[f64]> = cluster_data.chunks(shape).collect();
-        let old_bic = compute_bic(
-            &wrapped_cluster_data,
-            &vec![centroid],
-            vec![0; cluster_data.len()],
-        );
-        let new_bic = compute_bic(
-            &wrapped_cluster_data,
-            &kmeans_result.centroids.chunks(shape).collect(),
-            kmeans_result.assignments,
-        );
+        let old_bic = compute_bic(&wrapped_cluster_data, &state);
+        let new_bic = compute_bic(&wrapped_cluster_data, &kmeans_result);
         println!(
             "Comparing centroids: {:?}({}) to {:?}({})?",
             centroid, old_bic, kmeans_result.centroids, new_bic
@@ -52,4 +44,17 @@ pub fn next_centroids<'a>(
     }
 
     next_centroids
+}
+
+/// Got some centroids? Returns the biggest set that ostensibly improves on
+/// them! Comes out trained!
+pub fn final_centroids(wrapped_data: &Vec<&[f64]>, state: kmeans::KMeansState<f64>) -> Vec<f64> {
+    let shape = wrapped_data[0].len();
+    let bic = compute_bic(wrapped_data, &state);
+    println!("Initial BIC: {:?}", bic);
+    loop {
+        let next_centroids = next_centroids(wrapped_data, &state);
+        let kmeans = KMeans::new(next_centroids.clone(), wrapped_data.len(), shape);
+    }
+    vec![]
 }
