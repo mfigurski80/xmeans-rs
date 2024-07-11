@@ -21,6 +21,11 @@ pub fn next_centroids<'a>(
             .map(|x| *x)
             .collect::<Vec<f64>>();
         let cluster_data_len = cluster_data.len() / shape;
+        if cluster_data_len <= 5 {
+            next_centroids.extend(centroid.iter());
+            continue;
+        }
+        
         // split the cluster and optimize new centroids
         let kmean = KMeans::new(cluster_data.clone(), cluster_data_len, shape);
         let kmeans_result = kmean.kmeans_lloyd(
@@ -42,19 +47,25 @@ pub fn next_centroids<'a>(
             next_centroids.extend(kmeans_result.centroids.iter());
         }
     }
-
     next_centroids
 }
 
-/// Got some centroids? Returns the biggest set that ostensibly improves on
-/// them! Comes out trained!
-pub fn final_centroids(wrapped_data: &Vec<&[f64]>, state: kmeans::KMeansState<f64>) -> Vec<f64> {
+/// Got some centroids? Returns the biggest set that improves on them!
+/// Comes out fully trained!
+pub fn final_centroids(wrapped_data: &Vec<&[f64]>, state: kmeans::KMeansState<f64>, limit: usize) -> Vec<f64> {
     let shape = wrapped_data[0].len();
-    let bic = compute_bic(wrapped_data, &state);
-    println!("Initial BIC: {:?}", bic);
-    loop {
-        let next_centroids = next_centroids(wrapped_data, &state);
+    let mut last_state = state;
+    for _ in 0..limit {
+        let next_centroids = next_centroids(wrapped_data, &last_state);
+        if (next_centroids.len() / shape) == last_state.centroids.len() {
+            return next_centroids;
+        }
         let kmeans = KMeans::new(next_centroids.clone(), wrapped_data.len(), shape);
+        let result =
+            kmeans.kmeans_lloyd(next_centroids.len(), 100, |_, state, _| {
+              state.centroids = next_centroids.clone();
+            }, &KMeansConfig::default());
+        last_state = result;
     }
-    vec![]
+    last_state.centroids
 }

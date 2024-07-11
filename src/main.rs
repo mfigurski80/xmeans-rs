@@ -42,19 +42,12 @@ fn run_xmeans(data: &Vec<f64>, shape: usize, start_k: usize) {
         &KMeansConfig::default(),
     );
 
-    let wrapped_centroids: Vec<&[f64]> = kmean_result.centroids.chunks(shape).collect();
     let wrapped_data: Vec<&[f64]> = data.chunks(shape).collect();
-
     let bic = bic::compute_bic(&wrapped_data, &kmean_result);
     println!("Initial BIC: {:?}", bic);
 
-    loop {
-        let next_centroids = xmeans::next_centroids(&wrapped_data, &kmean_result);
-        println!("Next Centroids: {:?}", next_centroids);
-        break;
-    }
-
-    unimplemented!();
+    let fin_centroids = xmeans::final_centroids(&wrapped_data, kmean_result, 10); 
+    println!("Final centroids: {:?}", fin_centroids);
 }
 
 fn print_centroids(c: &[&[f64]]) {
