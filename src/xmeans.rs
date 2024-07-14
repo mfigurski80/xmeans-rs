@@ -4,7 +4,7 @@ use kmeans::*;
 /// Got some centroids? Returns a bigger set that potentially improves on
 /// them! Just train them and check the bic again to make sure
 pub fn next_centroids<'a>(
-    wrapped_data: &Vec<&'a [f64]>,
+    wrapped_data: &[&'a [f64]],
     state: &kmeans::KMeansState<f64>,
 ) -> Vec<f64> {
     let mut next_centroids: Vec<f64> = vec![];
@@ -21,7 +21,7 @@ pub fn next_centroids<'a>(
             .map(|x| *x)
             .collect::<Vec<f64>>();
         let cluster_data_len = cluster_data.len() / shape;
-        if cluster_data_len <= 5 {
+        if cluster_data_len <= 2 {
             next_centroids.extend(centroid.iter());
             continue;
         }
@@ -52,20 +52,42 @@ pub fn next_centroids<'a>(
 
 /// Got some centroids? Returns the biggest set that improves on them!
 /// Comes out fully trained!
-pub fn final_centroids(wrapped_data: &Vec<&[f64]>, state: kmeans::KMeansState<f64>, limit: usize) -> Vec<f64> {
+pub fn final_centroids(wrapped_data: &[&[f64]], state: kmeans::KMeansState<f64>, limit: usize) -> Vec<f64> {
+    println!("Starting with centroids: {:?}", state.centroids);
     let shape = wrapped_data[0].len();
+    let len = wrapped_data.len();
+    println!("Data shape: {}x{}", shape, len);
     let mut last_state = state;
     for _ in 0..limit {
-        let next_centroids = next_centroids(wrapped_data, &last_state);
-        if (next_centroids.len() / shape) == last_state.centroids.len() {
-            return next_centroids;
+        println!("Trying to improve on: {:?}", last_state.centroids);
+        let next = next_centroids(wrapped_data, &last_state);
+        let count = next.len() / shape;
+        if count == last_state.centroids.len() {
+            break;
         }
-        let kmeans = KMeans::new(next_centroids.clone(), wrapped_data.len(), shape);
-        let result =
-            kmeans.kmeans_lloyd(next_centroids.len(), 100, |_, state, _| {
-              state.centroids = next_centroids.clone();
+        println!("Optimizing {} centroids: {:?}", count, next);
+        let kmeans = KMeans::new(wrapped_data.concat(), len, shape);
+        let lanes = 8; // TODO: find what kmeans lib expects
+        // let setup_fn = |_, state, _| {
+            // let set = next.iter().map(|c| {
+                // let mut laned = vec![*c; lanes];
+                // laned
+            // }).collect::<Vec<Vec<f64>>>().concat();
+            // println!("Setting centroids: {:?}", set);
+            // state.centroids = set;
+        // };
+        last_state =
+            kmeans.kmeans_lloyd(count, 100, |km, state, conf| {
+              let set = next.iter().map(|c| {
+                let mut laned = vec![0.0; lanes];
+                laned[0] = *c;
+                laned
+              }).collect::<Vec<Vec<f64>>>().concat();
+              state.centroids = set;
+              println!("Other: {:?}", km.sample_dims);
+              println!("Setting state: {:?}", state);
+              println!("Setting conf: {:?}", conf);
             }, &KMeansConfig::default());
-        last_state = result;
     }
     last_state.centroids
 }
