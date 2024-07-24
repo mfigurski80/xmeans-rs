@@ -84,7 +84,6 @@ pub fn final_centroids(wrapped_data: &[&[f64]], state: kmeans::KMeansState<f64>,
                 laned
               }).collect::<Vec<Vec<f64>>>().concat();
               state.centroids = set;
-              println!("Other: {:?}", km.sample_dims);
               println!("Setting state: {:?}", state);
               println!("Setting conf: {:?}", conf);
             }, &KMeansConfig::default());
