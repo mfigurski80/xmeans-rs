@@ -26,7 +26,7 @@ fn main() {
 
 fn run_kmeans(data: &Vec<f64>, shape: usize, k: usize) {
     let data_len = data.len() / shape;
-    let kmean = KMeans::new(data.clone(), data_len, shape);
+    let kmean = KMeans::<_, 8>::new(data.clone(), data_len, shape);
     let result = kmean.kmeans_lloyd(k, 100, KMeans::init_kmeanplusplus, &KMeansConfig::default());
     let wrapped_centroids: Vec<&[f64]> = result.centroids.chunks(shape).collect();
     print_centroids(&wrapped_centroids);
@@ -34,7 +34,7 @@ fn run_kmeans(data: &Vec<f64>, shape: usize, k: usize) {
 
 fn run_xmeans(data: &Vec<f64>, shape: usize, start_k: usize) {
     let data_len = data.len() / shape;
-    let kmean = KMeans::new(data.clone(), data_len, shape);
+    let kmean = KMeans::<_, 8>::new(data.clone(), data_len, shape);
     let kmean_result = kmean.kmeans_lloyd(
         start_k,
         100,

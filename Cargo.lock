@@ -110,6 +110,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 [[package]]
 name = "kmeans"
 version = "0.10.0"
+source = "git+https://github.com/mfigurski80/kmean-rs#66db6aaa15413a01ce157f6b5524bcf702ab4f3d"
 dependencies = [
  "num",
  "num-traits",

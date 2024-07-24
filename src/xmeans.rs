@@ -27,7 +27,7 @@ pub fn next_centroids<'a>(
         }
         
         // split the cluster and optimize new centroids
-        let kmean = KMeans::new(cluster_data.clone(), cluster_data_len, shape);
+        let kmean = KMeans::<_, 8>::new(cluster_data.clone(), cluster_data_len, shape);
         let kmeans_result = kmean.kmeans_lloyd(
             2,
             100,
@@ -66,7 +66,7 @@ pub fn final_centroids(wrapped_data: &[&[f64]], state: kmeans::KMeansState<f64>,
             break;
         }
         println!("Optimizing {} centroids: {:?}", count, next);
-        let kmeans = KMeans::new(wrapped_data.concat(), len, shape);
+        let kmeans = KMeans::<_, 8>::new(wrapped_data.concat(), len, shape);
         let lanes = 8; // TODO: find what kmeans lib expects
         // let setup_fn = |_, state, _| {
             // let set = next.iter().map(|c| {
