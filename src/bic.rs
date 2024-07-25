@@ -29,7 +29,7 @@ fn compute_group_ll(errors: Vec<f64>, k: usize) -> f64 {
     ll * 2.0
 }
 
-// pub fn compute_bic(data: &[&[f64]], centroids: &Vec<&[f64]>, assignments: Vec<usize>) -> f64 {
+/** Compute grouping BIC according to example set by Pelleg and Moore (2000) */
 pub fn compute_bic(data: &[&[f64]], model: &KMeansState<f64>) -> f64 {
     let shape = data[0].len();
     let centroids: Vec<&[f64]> = model.centroids.chunks(shape).collect();
