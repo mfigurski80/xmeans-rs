@@ -11,8 +11,13 @@ fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
 
 /** Follow reduced ll equation from Pelleg and Moore (2000) */
 fn compute_group_ll(errors: Vec<f64>, k: usize) -> f64 {
+    let k = k as f64;
     let len = errors.len() as f64;
-    let std_dev = errors.iter().fold(0.0, |acc, x| acc + x) / (len - k as f64);
+    if len <= k {
+      return f64::MIN_POSITIVE;
+    }
+    let std_dev = errors.iter().fold(0.0, |acc, x| acc + x) / (len - k);
+    // println!("errors: {:?}", errors);
     let distribution = Normal::new(0.0, std_dev).unwrap();
     // println!("Distribution: {:?}", distribution);
     let ll = errors

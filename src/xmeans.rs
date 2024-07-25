@@ -67,26 +67,7 @@ pub fn final_centroids(wrapped_data: &[&[f64]], state: kmeans::KMeansState<f64>,
         }
         println!("Optimizing {} centroids: {:?}", count, next);
         let kmeans = KMeans::<_, 8>::new(wrapped_data.concat(), len, shape);
-        let lanes = 8; // TODO: find what kmeans lib expects
-        // let setup_fn = |_, state, _| {
-            // let set = next.iter().map(|c| {
-                // let mut laned = vec![*c; lanes];
-                // laned
-            // }).collect::<Vec<Vec<f64>>>().concat();
-            // println!("Setting centroids: {:?}", set);
-            // state.centroids = set;
-        // };
-        last_state =
-            kmeans.kmeans_lloyd(count, 100, |km, state, conf| {
-              let set = next.iter().map(|c| {
-                let mut laned = vec![0.0; lanes];
-                laned[0] = *c;
-                laned
-              }).collect::<Vec<Vec<f64>>>().concat();
-              state.centroids = set;
-              println!("Setting state: {:?}", state);
-              println!("Setting conf: {:?}", conf);
-            }, &KMeansConfig::default());
+        last_state = kmeans.kmeans_lloyd(count, 100, KMeans::init_precomputed(next), &KMeansConfig::default());
     }
     last_state.centroids
 }
