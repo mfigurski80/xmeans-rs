@@ -1,5 +1,5 @@
 [package]
-name = "xmeans_rs"
+name = "xmeans"
 version = "0.1.0"
 edition = "2021"
 
