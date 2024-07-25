@@ -9,15 +9,23 @@ fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
     f64::sqrt(dist)
 }
 
+fn compute_stddev(v: &[f64], free_params: usize) -> f64 {
+  let free = free_params as f64;
+  let len = v.len() as f64;
+  if len <= free {
+    return f64::INFINITY;
+  }
+  return v.iter().sum::<f64>() / (len - free);
+}
+
 /** Follow reduced ll equation from Pelleg and Moore (2000) */
 fn compute_group_ll(errors: Vec<f64>, k: usize) -> f64 {
-    let k = k as f64;
-    let len = errors.len() as f64;
-    if len <= k {
+    // println!("errors: {:?}", errors);
+    let std_dev = compute_stddev(&errors, k );
+    // println!("std_dev: {:?}", std_dev);
+    if std_dev == f64::INFINITY {
       return f64::MIN_POSITIVE;
     }
-    let std_dev = errors.iter().fold(0.0, |acc, x| acc + x) / (len - k);
-    // println!("errors: {:?}", errors);
     let distribution = Normal::new(0.0, std_dev).unwrap();
     // println!("Distribution: {:?}", distribution);
     let ll = errors
