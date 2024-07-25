@@ -13,7 +13,6 @@ fn main() {
             std::process::exit(1);
         }
     };
-
     // read the data file into flat numeric vector
     let (data, shape) = read_csv::read_csv_data(args.file_path.as_str(), args.delim);
     if args.k > 0 {
