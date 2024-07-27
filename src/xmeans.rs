@@ -42,10 +42,10 @@ pub fn next_centroids<'a>(
         let wrapped_cluster_data: Vec<&[f64]> = cluster_data.chunks(shape).collect();
         let old_bic = compute_bic(&wrapped_cluster_data, &state, state_std_dev);
         let new_bic = compute_bic(&wrapped_cluster_data, &kmeans_result, state_std_dev);
-        // println!(
-            // "Comparing centroids: {:?}({}) to {:?}({})?",
-            // centroid, old_bic, kmeans_result.centroids, new_bic
-        // );
+        println!(
+            "Comparing centroids: {:?}({}) to {:?}({})?",
+            centroid, old_bic, kmeans_result.centroids, new_bic
+        );
         if old_bic < new_bic {
             next_centroids.extend(centroid.iter());
         } else {

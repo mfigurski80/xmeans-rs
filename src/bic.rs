@@ -41,9 +41,10 @@ fn compute_group_ll(errors: Vec<f64>, free_params: usize, model_std_dev: f64) ->
     // println!("errors: {:?}", errors);
     let std_dev = compute_stddev(&errors, free_params);
     let variance_scaling = f64::ln(model_std_dev / std_dev);
+    println!("variance scaling: {:?}", variance_scaling);
     // println!("std_dev: {:?}", std_dev);
     if std_dev == f64::INFINITY {
-      return f64::MIN_POSITIVE;
+      return 0.0;
     }
     let distribution = Normal::new(0.0, std_dev).unwrap();
     // println!("Distribution: {:?}", distribution);
