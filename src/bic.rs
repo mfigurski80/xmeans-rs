@@ -37,11 +37,9 @@ fn compute_free_params(model: &KMeansState<f64>) -> usize {
 }
 
 /// Follow reduced ll equation from Pelleg and Moore (2000)
-fn compute_group_ll(errors: Vec<f64>, free_params: usize, model_std_dev: f64) -> f64 {
+fn compute_group_ll(errors: Vec<f64>, free_params: usize) -> f64 {
     // println!("errors: {:?}", errors);
     let std_dev = compute_stddev(&errors, free_params);
-    let variance_scaling = f64::ln(model_std_dev / std_dev);
-    println!("variance scaling: {:?}", variance_scaling);
     // println!("std_dev: {:?}", std_dev);
     if std_dev == f64::INFINITY {
       return 0.0;
@@ -51,26 +49,18 @@ fn compute_group_ll(errors: Vec<f64>, free_params: usize, model_std_dev: f64) ->
     let ll = errors
         .iter()
         // folded distribution: double ll
-        .map(|x| 2.0 * distribution.ln_pdf(*x) + variance_scaling)
+        .map(|x| 2.0 * distribution.ln_pdf(*x))
         .sum::<f64>();
     // println!("LL: {:?}", ll);
     ll
 }
 
 /// Compute grouping BIC according to example set by Pelleg and Moore (2000)
-pub fn compute_bic(data: &[&[f64]], model: &KMeansState<f64>, model_stddev: f64) -> f64 {
+pub fn compute_bic(data: &[&[f64]], model: &KMeansState<f64>) -> f64 {
     let len = data.len() as f64;
     let errors = build_errors(data, model);
     let free = compute_free_params(model);
-    let ll = compute_group_ll(errors, free, model_stddev);
+    let ll = compute_group_ll(errors, free);
     let bic = free as f64 * f64::ln(len) - 2.0 * ll;
     bic
-}
-
-/// Compute the assumed standard deviation of the model
-pub fn compute_model_stddev(data: &[&[f64]], model: &KMeansState<f64>) -> f64 {
-    let free = compute_free_params(model);
-    let errors = build_errors(data, model);
-    let std_dev = compute_stddev(&errors, free);
-    std_dev
 }

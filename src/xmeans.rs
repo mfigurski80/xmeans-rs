@@ -1,4 +1,4 @@
-use crate::bic::{compute_bic, compute_model_stddev};
+use crate::bic::compute_bic;
 use kmeans::*;
 
 
@@ -10,8 +10,6 @@ pub fn next_centroids<'a>(
     wrapped_data: &[&'a [f64]],
     state: &kmeans::KMeansState<f64>,
 ) -> Vec<f64> {
-    let state_std_dev = compute_model_stddev(wrapped_data, state);
-    println!("Model stddev: {:?}", state_std_dev);
     let mut next_centroids: Vec<f64> = vec![];
 
     let shape = wrapped_data[0].len();
@@ -40,12 +38,12 @@ pub fn next_centroids<'a>(
             &KMeansConfig::default(),
         );
         let wrapped_cluster_data: Vec<&[f64]> = cluster_data.chunks(shape).collect();
-        let old_bic = compute_bic(&wrapped_cluster_data, &state, state_std_dev);
-        let new_bic = compute_bic(&wrapped_cluster_data, &kmeans_result, state_std_dev);
-        println!(
-            "Comparing centroids: {:?}({}) to {:?}({})?",
-            centroid, old_bic, kmeans_result.centroids, new_bic
-        );
+        let old_bic = compute_bic(&wrapped_cluster_data, &state);
+        let new_bic = compute_bic(&wrapped_cluster_data, &kmeans_result);
+        // println!(
+            // "Comparing centroids: {:?}({}) to {:?}({})?",
+            // centroid, old_bic, kmeans_result.centroids, new_bic
+        // );
         if old_bic < new_bic {
             next_centroids.extend(centroid.iter());
         } else {
@@ -63,6 +61,7 @@ pub fn final_centroids(wrapped_data: &[&[f64]], state: kmeans::KMeansState<f64>,
     let len = wrapped_data.len();
     // println!("Data shape: {}x{}", shape, len);
     let mut last_state = state;
+    let mut last_bic = compute_bic(wrapped_data, &last_state);
     for _ in 0..limit {
         // println!("Trying to improve on: {:?}", last_state.centroids);
         let next = next_centroids(wrapped_data, &last_state);
@@ -72,7 +71,13 @@ pub fn final_centroids(wrapped_data: &[&[f64]], state: kmeans::KMeansState<f64>,
         }
         // println!("Optimizing {} centroids: {:?}", count, next);
         let kmeans = KMeans::<_, LANES>::new(wrapped_data.concat(), len, shape);
-        last_state = kmeans.kmeans_lloyd(count, 100, KMeans::init_precomputed(next), &KMeansConfig::default());
+        let new_state = kmeans.kmeans_lloyd(count, 100, KMeans::init_precomputed(next), &KMeansConfig::default());
+        let new_bic = compute_bic(wrapped_data, &last_state);
+        if new_bic > last_bic {
+          break;
+        }
+        last_state = new_state;
+        last_bic = new_bic;
     }
     last_state.centroids
 }
