@@ -45,7 +45,7 @@ fn compute_group_ll(errors: Vec<f64>, free_params: usize) -> f64 {
       return 0.0;
     }
     let distribution = Normal::new(0.0, std_dev).unwrap();
-    println!("Distribution: {:?}", distribution);
+    // println!("Distribution: {:?}", distribution);
     let ll = errors
         .iter()
         // folded distribution: double ll
