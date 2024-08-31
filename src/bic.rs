@@ -9,13 +9,13 @@ fn compute_distance(x: &[f64], y: &[f64]) -> f64 {
     f64::sqrt(dist)
 }
 
-fn compute_stddev(v: &[f64], free_params: usize) -> f64 {
+fn compute_stddev(resid: &[f64], free_params: usize) -> f64 {
   let free = free_params as f64;
-  let len = v.len() as f64;
+  let len = resid.len() as f64;
   if len <= free {
     return f64::INFINITY;
   }
-  return v.iter().sum::<f64>() * f64::sqrt(1.0 / (len - free));
+  return f64::sqrt(resid.iter().map(|v| v.powi(2)).sum::<f64>() / (len - free));
 }
 
 fn build_errors(data: &[&[f64]], model: &KMeansState<f64>) -> Vec<f64> {
@@ -63,4 +63,38 @@ pub fn compute_bic(data: &[&[f64]], model: &KMeansState<f64>) -> f64 {
     let ll = compute_group_ll(errors, free);
     let bic = free as f64 * f64::ln(len) - 2.0 * ll;
     bic
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use kmeans::*;
+
+    #[test]
+    fn it_computes_distance() {
+      let x = vec![1.0, 2.0, 3.0];
+      let y = vec![4.0, 5.0, 6.0];
+      let dist = compute_distance(&x, &y);
+      assert_eq!(dist, 5.196152422706632, "Distance should be ~5.196, got: {}", dist);
+    }
+
+    #[test]
+    fn it_computes_stddev() {
+      // let data = vec![1.0, 2.0, 3.0, 4.0];
+      // let mean = 2.5;
+      let distance = vec![1.5, 0.5, 0.5, 1.5];
+      let stddev = compute_stddev(&distance, 0);
+      assert_eq!(stddev, 1.118033988749895,"Stddev should be ~1.118, got: {}", stddev);
+    }
+
+    #[test]
+    fn it_computes_bic_in_range() {
+      let data = vec![1.0, 2.0, 3.0, 4.0];
+      let state = KMeans::<_, 1>::new(data.clone().into(), 4, 1)
+        .kmeans_lloyd(2, 10, KMeans::init_random_partition, &KMeansConfig::default());
+      let wrapped: Vec<&[f64]> = data.chunks(1).collect();
+      let bic = compute_bic(&wrapped, &state);
+      assert!(bic > 0.0, "BIC should be > 0, got: {}", bic);
+      assert!(bic < 10.0, "BIC should be < 10, got: {}", bic);
+    }
 }
